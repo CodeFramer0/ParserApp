@@ -13,3 +13,9 @@ class NoprizFizSerializer(serializers.ModelSerializer):
             "date_of_inclusion_protocol_img",
             "date_of_modification_img",
         )
+
+
+class NoprizYrSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NoprizYr
+        fields = "__all__"
