@@ -4,5 +4,10 @@ from . import views
 
 urlpatterns = [
     path("", views.index, name="index"),
-    path("download/excel/nopriz/fiz/", views.generate_excel_nopriz_fiz, name="download_excel_nopriz_fiz"),
+    path(
+        "excel/nopriz_fiz/", views.ExcelNoprizFizView.as_view(), name="excel_nopriz_fiz"
+    ),
+    # path("download/nopriz/yr/", views.excel_nopriz_jur, name="excel_nopriz_yr"),
+    # path("download/nostroy/fiz/", views.excel_nostroy_fiz, name="excel_nostroy_fiz"),
+    # path("download/nostroy/smet/", views.excel_nostroy_smet, name="excel_nostroy_smet"),
 ]

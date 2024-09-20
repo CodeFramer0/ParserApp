@@ -20,9 +20,11 @@ class NoprizFiz(models.Model):
     date_of_issue_certificate = models.CharField(max_length=50, null=True, blank=True)
     type_of_work = models.TextField(max_length=120, null=True, blank=True)
     date_of_exclusion = models.CharField(max_length=50, null=True, blank=True)
-    status_worker = models.CharField(max_length=100, choices=STATUS_CHOICES, blank=True, null=True)
+    status_worker = models.CharField(
+        max_length=100, choices=STATUS_CHOICES, blank=True, null=True
+    )
     verified_id_number = models.BooleanField(default=False)
-    id_number_verification_attempts = models.IntegerField(default=0)
+    id_number_verification_attempts = models.PositiveSmallIntegerField(default=0)
     is_parsed = models.BooleanField(default=False)
 
     def __str__(self):
