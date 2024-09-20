@@ -8,10 +8,10 @@ class NoprizFizFilter(rest_framework_filters.FilterSet):
     verified_id_number = rest_framework_filters.BooleanFilter()
     class Meta:
         model = NoprizFiz
-        fields = ["is_parsed", "verified_id_number", "verified_full_name"]
+        fields = ["is_parsed", "verified_id_number", "verified_full_name",]
 
 
 class NoprizYrFilter(rest_framework_filters.FilterSet):
     class Meta:
         model = NoprizYr
-        fields = ["id_number"]
+        fields = ["id_number",]
