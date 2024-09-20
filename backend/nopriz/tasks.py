@@ -1,13 +1,18 @@
 import logging
 import math
+import os
 import time
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from celery import shared_task
+from django.conf import settings
 from django.db.models import Q
 from django.db.models.functions import Length
 from nopriz.models import NoprizFiz, NoprizYr
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -16,13 +21,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
-from .models import NoprizYr
+from .models import NoprizFiz, NoprizYr
 from .utils import (
+    NoprizFizExcelGenerator,
+    NoprizYrExcelGenerator,
     extract_text_from_image,
     generate_combinations_of_replacements,
-    get_type_of_work,
+    fiz_get_type_of_work,
 )
-
 
 options = Options()
 options.add_argument("--no-sandbox")
@@ -39,7 +45,7 @@ STATUS_MAP = {
 }
 
 
-def check_id_number(img_url, id_number):
+def fiz_check_id_number(img_url, id_number):
     r = requests.get(url=f"https://nrs.nopriz.ru/?s.registrationNumber={id_number}")
     soup = BeautifulSoup(r.content, "html.parser")
     table = soup.find("table")
@@ -53,15 +59,15 @@ def check_id_number(img_url, id_number):
     return False
 
 
-def get_verify_id(img_url, id_number):
+def fiz_get_verify_id(img_url, id_number):
     obj_id_number = id_number
-    if check_id_number(img_url, id_number):
+    if fiz_check_id_number(img_url, id_number):
         logger.info(f"{id_number} Прошел верификацию.")
         return id_number
     else:
         id_number_list = generate_combinations_of_replacements(id_number)
         for id_number in id_number_list:
-            res = check_id_number(img_url, id_number)
+            res = fiz_check_id_number(img_url, id_number)
             logger.info(f"Делаю замену {obj_id_number} на {id_number}, результат {res}")
             if res:
                 logger.info(f"{obj_id_number} Верифицирован.")
@@ -71,7 +77,7 @@ def get_verify_id(img_url, id_number):
 
 
 @shared_task
-def parse_main_data():
+def fiz_parse_main_data():
     total_objects_in_db = NoprizFiz.objects.count()
     objects_per_page = 20
     start_page = math.floor(total_objects_in_db / objects_per_page) + 1
@@ -113,7 +119,7 @@ def parse_main_data():
                     id_number=id_number,
                     full_name=full_name,
                     date_of_inclusion_protocol=date_of_inclusion_protocol,
-                    type_of_work=get_type_of_work(columns),
+                    type_of_work=fiz_get_type_of_work(columns),
                     status_worker=STATUS_MAP[columns[-1].text],
                 )
                 logger.info(f"Был создан новый объект {obj}")
@@ -122,12 +128,12 @@ def parse_main_data():
 
 
 @shared_task
-def verify_id_number():
+def fiz_verify_id_number():
     for object in NoprizFiz.objects.filter(verified_id_number=False).order_by(
         "id_number_verification_attempts"
     ):
         id_number = object.id_number
-        new_id_number = get_verify_id(img_url=object.id_number_img, id_number=id_number)
+        new_id_number = fiz_get_verify_id(img_url=object.id_number_img, id_number=id_number)
         if new_id_number:
             object.id_number = new_id_number
             object.verified_id_number = True
@@ -138,7 +144,7 @@ def verify_id_number():
 
 
 @shared_task
-def parse_type_of_work():
+def fiz_parse_type_of_work():
     objects = NoprizFiz.objects.annotate(work_length=Length("type_of_work")).filter(
         Q(work_length__lt=53)
         | Q(type_of_work__isnull=True)
@@ -162,7 +168,7 @@ def parse_type_of_work():
             try:
                 row = table.find("tbody").find_all("tr")[1]
                 columns = row.find_all("td")
-                obj.type_of_work = get_type_of_work(columns)
+                obj.type_of_work = fiz_get_type_of_work(columns)
                 obj.save()
 
             except (IndexError, AttributeError) as e:
@@ -172,7 +178,7 @@ def parse_type_of_work():
 
 
 @shared_task
-def parse_status_worker():
+def fiz_parse_status_worker():
     objects = NoprizFiz.objects.exclude(
         status_worker__in=["ACTIVE", "EXCLUDED"], verified_id_number=True
     )
@@ -203,7 +209,7 @@ def parse_status_worker():
 
 
 @shared_task
-def verify_parsed_data():
+def fiz_verify_parsed_data():
     objects = NoprizFiz.objects.filter(
         verified_id_number=True,
         is_parsed=False,
@@ -216,12 +222,11 @@ def verify_parsed_data():
 
 
 @shared_task
-def parse_data():
+def yr_parse_data():
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     driver.get("https://www.nopriz.ru/nreesters/elektronnyy-reestr/")
     driver.maximize_window()
-    logging.info("Waiting for the page to load")
     time.sleep(1)
     WebDriverWait(driver, 20).until(
         EC.frame_to_be_available_and_switch_to_it((By.ID, "reestr_iframe"))
@@ -253,3 +258,15 @@ def parse_data():
                 logger.info(f"{e} {columns[0].text}")
             time.sleep(0.2)
         driver.find_elements(By.CLASS_NAME, "v-pagination__navigation")[-1].click()
+
+
+@shared_task
+def generate_excel_nopriz_fiz():
+    generator = NoprizFizExcelGenerator()
+    return generator.generate_excel()
+
+
+@shared_task
+def generate_excel_nopriz_yr():
+    generator = NoprizYrExcelGenerator()
+    return generator.generate_excel()

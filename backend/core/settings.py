@@ -152,28 +152,36 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CELERY_BEAT_SCHEDULE = {
-    "НОПРИЗ-ФИЗ Парсинг типа работ": {
-        "task": "nopriz.tasks.parse_type_of_work",
+    "НОПРИЗ-Физ Парсинг типа работ": {
+        "task": "nopriz.tasks.fiz_parse_type_of_work",
         "schedule": timedelta(hours=6),
     },
-    "НОПРИЗ-ФИЗ Парсинг статуса работника": {
-        "task": "nopriz.tasks.parse_status_worker",
+    "НОПРИЗ-Физ Парсинг статуса работника": {
+        "task": "nopriz.tasks.fiz_parse_status_worker",
         "schedule": timedelta(hours=6),
     },
-    "НОПРИЗ-ФИЗ Парсинг основных линков": {
-        "task": "nopriz.tasks.parse_main_data",
+    "НОПРИЗ-Физ Парсинг основных линков": {
+        "task": "nopriz.tasks.fiz_parse_main_data",
         "schedule": timedelta(hours=5),
     },
-    "НОПРИЗ-ФИЗ Валидация идентификационного номера": {
-        "task": "nopriz.tasks.verify_id_number",
+    "НОПРИЗ-Физ Валидация идентификационного номера": {
+        "task": "nopriz.tasks.fiz_verify_id_number",
         "schedule": timedelta(hours=12),
     },
-    "НОПРИЗ-ФИЗ Верификация основных данных": {
-        "task": "nopriz.tasks.verify_parsed_data",
+    "НОПРИЗ-Физ Верификация основных данных": {
+        "task": "nopriz.tasks.fiz_verify_parsed_data",
         "schedule": timedelta(hours=8),
     },
-    "НОПРИЗ-ФИЗ Генерация excel файла": {
+    "НОПРИЗ-Физ Генерация excel файла": {
         "task": "nopriz.tasks.generate_excel_nopriz_fiz",
+        "schedule": timedelta(hours=12),
+    },
+    "НОПРИЗ-Юр Генерация excel файла": {
+        "task": "nopriz.tasks.generate_excel_nopriz_yr",
+        "schedule": timedelta(hours=12),
+    },
+    "НОПРИЗ-Юр Парсинг данных": {
+        "task": "nopriz.tasks.yr_parse_data",
         "schedule": timedelta(hours=12),
     },
 }

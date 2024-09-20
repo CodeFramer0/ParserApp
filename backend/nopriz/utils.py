@@ -90,7 +90,7 @@ def extract_text_from_image(img_url, max_retries=6, retry_delay=5):
     return None
 
 
-def get_type_of_work(columns):
+def fiz_get_type_of_work(columns):
     type_of_work = columns[5].text.strip()
     if len(type_of_work) > 12:
         return type_of_work
