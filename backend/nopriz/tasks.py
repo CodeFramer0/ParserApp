@@ -11,7 +11,6 @@ from django.core.management import call_command
 from django.db.models import Q
 from django.db.models.functions import Length
 from django.utils import timezone
-from nopriz.models import NoprizFiz, NoprizYr
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -19,6 +18,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
+
+from nopriz.models import NoprizFiz, NoprizYr
 
 from .models import NoprizFiz, NoprizYr
 from .utils import (

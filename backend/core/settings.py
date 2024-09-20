@@ -1,8 +1,9 @@
 import logging
 import os
-import telebot
 from datetime import timedelta
 from pathlib import Path
+
+import telebot
 from environs import Env
 
 env = Env()
