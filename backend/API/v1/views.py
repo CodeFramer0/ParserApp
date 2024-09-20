@@ -12,7 +12,7 @@ from .serializer import *
 
 class NoprizFizViewSet(viewsets.ModelViewSet):
     serializer_class = NoprizFizSerializer
-    queryset = NoprizFiz.objects.filter(verified_id_number=True).order_by("id")
+    queryset = NoprizFiz.objects.all().order_by("id")
     permission_classes = [IsAuthenticated]
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     filterset_class = NoprizFizFilter
