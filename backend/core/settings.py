@@ -1,8 +1,8 @@
 import logging
 import os
+import telebot
 from datetime import timedelta
 from pathlib import Path
-
 from environs import Env
 
 env = Env()
@@ -12,12 +12,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 SECRET_KEY = env.str("SECRET_KEY")
-os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-
 DEBUG = env.bool("DEBUG")
-
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+BOT_TOKEN = env.str("BOT_TOKEN")
+DUMP_CHAT_ID = env.str("DUMP_CHAT_ID")
+BOT = telebot.TeleBot(token=BOT_TOKEN)
 
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 logging.basicConfig(
     format="%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s]  %(message)s",
     level=logging.INFO,
@@ -154,15 +155,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CELERY_BEAT_SCHEDULE = {
     "НОПРИЗ-Физ Парсинг типа работ": {
         "task": "nopriz.tasks.fiz_parse_type_of_work",
-        "schedule": timedelta(hours=6),
+        "schedule": timedelta(hours=1),
     },
     "НОПРИЗ-Физ Парсинг статуса работника": {
         "task": "nopriz.tasks.fiz_parse_status_worker",
-        "schedule": timedelta(hours=6),
+        "schedule": timedelta(hours=1),
     },
     "НОПРИЗ-Физ Парсинг основных линков": {
         "task": "nopriz.tasks.fiz_parse_main_data",
-        "schedule": timedelta(hours=5),
+        "schedule": timedelta(hours=1),
     },
     "НОПРИЗ-Физ Валидация идентификационного номера": {
         "task": "nopriz.tasks.fiz_verify_id_number",
@@ -170,19 +171,19 @@ CELERY_BEAT_SCHEDULE = {
     },
     "НОПРИЗ-Физ Верификация основных данных": {
         "task": "nopriz.tasks.fiz_verify_parsed_data",
-        "schedule": timedelta(hours=8),
+        "schedule": timedelta(hours=1),
     },
     "НОПРИЗ-Физ Генерация excel файла": {
         "task": "nopriz.tasks.generate_excel_nopriz_fiz",
-        "schedule": timedelta(hours=12),
+        "schedule": timedelta(hours=1),
     },
     "НОПРИЗ-Юр Генерация excel файла": {
         "task": "nopriz.tasks.generate_excel_nopriz_yr",
-        "schedule": timedelta(hours=12),
+        "schedule": timedelta(hours=1),
     },
     "НОПРИЗ-Юр Парсинг данных": {
         "task": "nopriz.tasks.yr_parse_data",
-        "schedule": timedelta(hours=12),
+        "schedule": timedelta(hours=1),
     },
 }
 

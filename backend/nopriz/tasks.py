@@ -3,16 +3,15 @@ import math
 import os
 import time
 
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from celery import shared_task
 from django.conf import settings
+from django.core.management import call_command
 from django.db.models import Q
 from django.db.models.functions import Length
+from django.utils import timezone
 from nopriz.models import NoprizFiz, NoprizYr
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -26,8 +25,8 @@ from .utils import (
     NoprizFizExcelGenerator,
     NoprizYrExcelGenerator,
     extract_text_from_image,
-    generate_combinations_of_replacements,
     fiz_get_type_of_work,
+    generate_combinations_of_replacements,
 )
 
 options = Options()
@@ -133,7 +132,9 @@ def fiz_verify_id_number():
         "id_number_verification_attempts"
     ):
         id_number = object.id_number
-        new_id_number = fiz_get_verify_id(img_url=object.id_number_img, id_number=id_number)
+        new_id_number = fiz_get_verify_id(
+            img_url=object.id_number_img, id_number=id_number
+        )
         if new_id_number:
             object.id_number = new_id_number
             object.verified_id_number = True
@@ -270,3 +271,20 @@ def generate_excel_nopriz_fiz():
 def generate_excel_nopriz_yr():
     generator = NoprizYrExcelGenerator()
     return generator.generate_excel()
+
+
+@shared_task
+def dumpdata_and_send_to_telegram():
+    try:
+        date = timezone.now().date()
+        output_file = f"nopriz-{date}.json"
+        with open(output_file, "w") as f:
+            call_command("dumpdata", "nopriz", stdout=f)
+        with open(output_file, "rb") as f:
+            settings.BOT.send_document(
+                chat_id=settings.DUMP_CHAT_ID, document=f, caption="Дамп nopriz"
+            )
+    finally:
+        if os.path.exists(output_file):
+            os.remove(output_file)
+        return f"Dump sent successfully."
