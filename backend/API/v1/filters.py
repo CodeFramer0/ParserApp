@@ -4,13 +4,11 @@ from nostroy.models import *
 
 
 class NoprizFizFilter(rest_framework_filters.FilterSet):
-    is_valid = rest_framework_filters.BooleanFilter()
+    is_parsed = rest_framework_filters.BooleanFilter()
     verified_id_number = rest_framework_filters.BooleanFilter()
-    verified_full_name = rest_framework_filters.BooleanFilter()
-
     class Meta:
         model = NoprizFiz
-        fields = ["is_valid", "verified_id_number", "verified_full_name"]
+        fields = ["is_parsed", "verified_id_number", "verified_full_name"]
 
 
 class NoprizYrFilter(rest_framework_filters.FilterSet):
