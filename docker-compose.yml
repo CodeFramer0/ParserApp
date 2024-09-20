@@ -9,15 +9,14 @@ services:
     restart: always  
     command: >
       sh -c "
-        python manage.py makemigrations nopriz &&
-        python manage.py makemigrations nostroy &&
-        python manage.py migrate django_celery_beat &&
-        python manage.py migrate django_celery_results &&
+        python manage.py makemigrations &&
         python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
         gunicorn core.wsgi:application --bind 0.0.0.0:8000 --timeout 600 --workers 4 --threads 4
       "
     volumes:
       - static:/backend/static
+      - static:/updated_static
       - media:/backend/media 
     expose:
       - 8000
@@ -96,6 +95,16 @@ services:
       - db
       - web
 
+  static_files_updater:
+    container_name: static_files_updater
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: sh -c "cp -r /backend/static/* /updated_static/"
+    volumes:
+      - static:/updated_static
+    depends_on:
+      - db
 volumes:
   postgres_data:
   static:
