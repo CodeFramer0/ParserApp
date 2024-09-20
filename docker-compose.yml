@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: parser_django
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always  
+    command: >
+      sh -c "
+        python manage.py makemigrations nopriz &&
+        python manage.py makemigrations nostroy &&
+        python manage.py migrate django_celery_beat &&
+        python manage.py migrate django_celery_results &&
+        python manage.py migrate &&
+        gunicorn core.wsgi:application --bind 0.0.0.0:8000 --timeout 600 --workers 4 --threads 4
+      "
+    volumes:
+      - static:/backend/static
+      - media:/backend/media 
+    expose:
+      - 8000
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - redis
+    
+
+  db:
+    container_name: parser_db
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./backend/.env
+    ports:
+      - 5433:5433
+
+  nginx:
+    container_name: parser_nginx
+    build: ./nginx
+    restart: always
+    volumes:
+      - static:/backend/static
+      - media:/backend/media
+    ports:
+      - 80:80
+    depends_on:
+      - web
+
+  redis:
+    container_name: parser_redis
+    image: redis:5-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    expose:
+      - 6379
+    depends_on:
+      - db
+
+  celery_worker:
+    container_name: parser_celery_worker
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    command: celery -A core worker -l info
+    volumes:
+      - static:/backend/static
+      - media:/backend/media 
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+      - db
+      - web
+
+  celery_beat:
+    container_name: parser_celery_beat
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    command: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - static:/backend/static
+      - media:/backend/media 
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+      - db
+      - web
+
+volumes:
+  postgres_data:
+  static:
+  media:
