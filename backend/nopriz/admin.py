@@ -38,9 +38,5 @@ class NoprizFiz(admin.ModelAdmin):
         "date_of_termination",
         "director",
     )
-    search_fields = [
-        "id_number",
-        'inn',
-        'ogrn'
-    ]
+    search_fields = ["id_number", "inn", "ogrn"]
     list_filter = ("status",)
