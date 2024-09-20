@@ -1,8 +1,16 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.1.0 
+    rev: 24.8.0
     hooks:
       - id: black
-        name: Black code formatter
-        language_version: python3
-        stages: [commit]
+
+  # - repo: https://github.com/commitizen-tools/commitizen
+  #   rev: v3.29.0
+  #   hooks:
+  #     - id: commitizen
+  #       stages: [commit-msg]
+
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
