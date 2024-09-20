@@ -190,8 +190,8 @@ class NoprizYrExcelGenerator(ExcelGenerator):
             "name_of_the_member_cpo": "Название члена СРО",
             "inn": "ИНН",
             "ogrn": "ОГРН",
-            "date_of_termination": "Дата прекращения",
             "date_of_registration": "Дата регистрации",
+            "date_of_termination": "Дата прекращения",
             "director": "Директор",
         }
         super().__init__(data, filename, title, column_mapping)
