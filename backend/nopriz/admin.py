@@ -40,5 +40,7 @@ class NoprizFiz(admin.ModelAdmin):
     )
     search_fields = [
         "id_number",
+        'inn',
+        'ogrn'
     ]
     list_filter = ("status",)
