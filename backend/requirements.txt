@@ -21,3 +21,4 @@ beautifulsoup4
 XlsxWriter
 selenium
 webdriver-manager
+drf-yasg

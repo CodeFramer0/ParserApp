@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_celery_results",
     "django_filters",
+    "drf_yasg",
 ]
 
 MIDDLEWARE = [
@@ -143,11 +144,9 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 STATIC_URL = "/static/"
-
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -155,23 +154,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CELERY_BEAT_SCHEDULE = {
     "НОПРИЗ-ФИЗ Парсинг типа работ": {
         "task": "nopriz.tasks.parse_type_of_work",
-        "schedule": timedelta(hours=1),
+        "schedule": timedelta(hours=6),
     },
     "НОПРИЗ-ФИЗ Парсинг статуса работника": {
         "task": "nopriz.tasks.parse_status_worker",
-        "schedule": timedelta(hours=1),
+        "schedule": timedelta(hours=6),
     },
     "НОПРИЗ-ФИЗ Парсинг основных линков": {
         "task": "nopriz.tasks.parse_main_data",
-        "schedule": timedelta(hours=1),
+        "schedule": timedelta(hours=5),
     },
     "НОПРИЗ-ФИЗ Валидация идентификационного номера": {
         "task": "nopriz.tasks.verify_id_number",
-        "schedule": timedelta(hours=1),
+        "schedule": timedelta(hours=12),
     },
     "НОПРИЗ-ФИЗ Верификация основных данных": {
         "task": "nopriz.tasks.verify_parsed_data",
-        "schedule": timedelta(hours=1),
+        "schedule": timedelta(hours=8),
+    },
+    "НОПРИЗ-ФИЗ Генерация excel файла": {
+        "task": "nopriz.tasks.generate_excel_nopriz_fiz",
+        "schedule": timedelta(hours=12),
     },
 }
 
