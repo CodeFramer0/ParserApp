@@ -171,6 +171,7 @@ def fiz_parse_type_of_work():
                 row = table.find("tbody").find_all("tr")[1]
                 columns = row.find_all("td")
                 obj.type_of_work = fiz_get_type_of_work(columns)
+                logger.info(f"Обновил тип работ для {obj.id_number}")
                 obj.save()
 
             except (IndexError, AttributeError) as e:
