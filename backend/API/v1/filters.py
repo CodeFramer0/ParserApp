@@ -13,7 +13,6 @@ class NoprizFizFilter(rest_framework_filters.FilterSet):
         fields = [
             "is_parsed",
             "verified_id_number",
-            "verified_full_name",
         ]
 
 
