@@ -1,16 +1,21 @@
+import asyncio
+import bz2
 import logging
 import math
 import os
 import time
 
 import requests
+from aiogram.types.input_file import InputFile
 from bs4 import BeautifulSoup
 from celery import shared_task
+from core.settings import bot
 from django.conf import settings
 from django.core.management import call_command
 from django.db.models import Q
 from django.db.models.functions import Length
 from django.utils import timezone
+from nopriz.models import NoprizFiz, NoprizYr
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -18,8 +23,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
-
-from nopriz.models import NoprizFiz, NoprizYr
 
 from .models import NoprizFiz, NoprizYr
 from .utils import (
@@ -113,14 +116,16 @@ def fiz_parse_main_data():
                 date_of_inclusion_protocol = extract_text_from_image(
                     date_of_inclusion_protocol_img
                 )
-                obj = NoprizFiz.objects.get_or_create(
+                obj, created = NoprizFiz.objects.get_or_create(
                     id_number_img=id_number_img,
-                    full_name_img=full_name_img,
-                    id_number=id_number,
-                    full_name=full_name,
-                    date_of_inclusion_protocol=date_of_inclusion_protocol,
-                    type_of_work=fiz_get_type_of_work(columns),
-                    status_worker=STATUS_MAP[columns[-1].text],
+                    defaults={
+                        "full_name_img": full_name_img,
+                        "id_number": id_number,
+                        "full_name": full_name,
+                        "date_of_inclusion_protocol": date_of_inclusion_protocol,
+                        "type_of_work": fiz_get_type_of_work(columns),
+                        "status_worker": STATUS_MAP[columns[-1].text],
+                    },
                 )
                 logger.info(f"Был создан новый объект {obj}")
             except Exception as e:
@@ -245,11 +250,14 @@ def yr_parse_data():
         rows = table.find_all("tr")[1:]
         for row in rows:
             columns = row.find_all("td")
+            status = columns[2].text.strip()
+            if len(status) > 4:
+                status = STATUS_MAP[status]
             try:
                 NoprizYr.objects.get_or_create(
                     id_number=columns[0].text,
                     name_cpo=columns[1].text,
-                    status=STATUS_MAP[columns[2].text.strip()],
+                    status=status,
                     name_of_the_member_cpo=columns[3].text,
                     inn=columns[4].text,
                     ogrn=columns[5].text,
@@ -275,18 +283,29 @@ def generate_excel_nopriz_yr():
     return generator.generate_excel()
 
 
+async def send_telegram_message():
+
+    date = timezone.now().date()
+    output_file = f"nopriz-{date}.json"
+    output_file_compessed = f"nopriz-{date}.bz2"
+    with open(output_file, "w") as f:
+        call_command("dumpdata", "nopriz", stdout=f)
+    with open(output_file, mode="rb") as fin, bz2.open(
+        output_file_compessed, "wb"
+    ) as fout:
+        fout.write(fin.read())
+
+    await bot.send_document(
+        chat_id=settings.DUMP_CHAT_ID,
+        document=InputFile(output_file_compessed),
+        caption="Дамп НОПРИЗ",
+    )
+    os.remove(output_file)
+    os.remove(output_file_compessed)
+
+    return f"Dump sent successfully."
+
+
 @shared_task
 def dumpdata_and_send_to_telegram():
-    try:
-        date = timezone.now().date()
-        output_file = f"nopriz-{date}.json"
-        with open(output_file, "w") as f:
-            call_command("dumpdata", "nopriz", stdout=f)
-        with open(output_file, "rb") as f:
-            settings.BOT.send_document(
-                chat_id=settings.DUMP_CHAT_ID, document=f, caption="Дамп nopriz"
-            )
-    finally:
-        if os.path.exists(output_file):
-            os.remove(output_file)
-        return f"Dump sent successfully."
+    return asyncio.run(send_telegram_message())
