@@ -14,6 +14,7 @@ from openpyxl.styles import Alignment, Font
 from PIL import Image
 
 from .models import NoprizFiz, NoprizYr
+from django.db.models import Case, When, Value, CharField
 
 
 def generate_combinations_of_replacements(
@@ -143,15 +144,26 @@ class ExcelGenerator:
 
 class NoprizFizExcelGenerator(ExcelGenerator):
     def __init__(self):
-        data = NoprizFiz.objects.filter(is_parsed=True).values(
-            "id_number",
-            "full_name",
-            "date_of_inclusion_protocol",
-            "date_of_modification",
-            "date_of_issue_certificate",
-            "type_of_work",
-            "date_of_exclusion",
-            "status_worker",
+        data = (
+            NoprizFiz.objects.filter(is_parsed=True)
+            .annotate(
+                status_worker_display=Case(
+                    When(status_worker="ACTIVE", then=Value("Действует")),
+                    When(status_worker="EXCLUDED", then=Value("Исключен")),
+                    default=Value("Неизвестно"),
+                    output_field=CharField(),
+                )
+            )
+            .values(
+                "id_number",
+                "full_name",
+                "date_of_inclusion_protocol",
+                "date_of_modification",
+                "date_of_issue_certificate",
+                "type_of_work",
+                "date_of_exclusion",
+                "status_worker_display",
+            )
         )
         filename = "НОПРИЗ Физ лица.xlsx"
         title = "НОПРИЗ Физ-лица"
@@ -163,30 +175,41 @@ class NoprizFizExcelGenerator(ExcelGenerator):
             "date_of_issue_certificate": "Дата выдачи сертификата",
             "type_of_work": "Тип работы",
             "date_of_exclusion": "Дата исключения",
-            "status_worker": "Статус",
+            "status_worker_display": "Статус",
         }
         super().__init__(data, filename, title, column_mapping)
 
 
 class NoprizYrExcelGenerator(ExcelGenerator):
     def __init__(self):
-        data = NoprizYr.objects.all().values(
-            "id_number",
-            "name_cpo",
-            "status",
-            "name_of_the_member_cpo",
-            "inn",
-            "ogrn",
-            "date_of_termination",
-            "date_of_registration",
-            "director",
+        data = (
+            NoprizYr.objects.all()
+            .annotate(
+                status_worker_display=Case(
+                    When(status_worker="ACTIVE", then=Value("Является членом")),
+                    When(status_worker="EXCLUDED", then=Value("Исключен")),
+                    default=Value("Неизвестно"),
+                    output_field=CharField(),
+                )
+            )
+            .values(
+                "id_number",
+                "name_cpo",
+                "status",
+                "name_of_the_member_cpo",
+                "inn",
+                "ogrn",
+                "date_of_termination",
+                "date_of_registration",
+                "director",
+            )
         )
         filename = "НОПРИЗ Юр лица.xlsx"
         title = "НОПРИЗ Юр-лица"
         column_mapping = {
             "id_number": "Номер ID",
             "name_cpo": "Название СРО",
-            "status": "Статус",
+            "status_worker_display": "Статус",
             "name_of_the_member_cpo": "Название члена СРО",
             "inn": "ИНН",
             "ogrn": "ОГРН",
