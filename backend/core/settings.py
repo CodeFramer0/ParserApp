@@ -3,7 +3,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-import telebot
+from aiogram import Bot
 from environs import Env
 
 env = Env()
@@ -17,8 +17,7 @@ DEBUG = env.bool("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 BOT_TOKEN = env.str("BOT_TOKEN")
 DUMP_CHAT_ID = env.str("DUMP_CHAT_ID")
-BOT = telebot.TeleBot(token=BOT_TOKEN)
-
+bot = Bot(token=BOT_TOKEN)
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 logging.basicConfig(
     format="%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s]  %(message)s",
@@ -185,6 +184,10 @@ CELERY_BEAT_SCHEDULE = {
     "НОПРИЗ-Юр Парсинг данных": {
         "task": "nopriz.tasks.yr_parse_data",
         "schedule": timedelta(hours=1),
+    },
+    "НОПРИЗ Отправка дампа в ТГ": {
+        "task": "nopriz.tasks.dumpdata_and_send_to_telegram",
+        "schedule": timedelta(hours=24),
     },
 }
 

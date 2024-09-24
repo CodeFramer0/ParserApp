@@ -22,4 +22,4 @@ XlsxWriter
 selenium
 webdriver-manager
 drf-yasg
-pyTelegramBotAPI
+aiogram==2.25.1
