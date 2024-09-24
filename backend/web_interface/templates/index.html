@@ -40,6 +40,21 @@
     </div>
 </div>
 
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Загрузите файл для декомпрессии</h5>
+        <form id="decompress-form" method="post" enctype="multipart/form-data" action="{% url 'decompress-file' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="fileInput" class="form-label">Выберите сжатый файл (.bz2)</label>
+                <input class="form-control" type="file" id="fileInput" name="file" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Декомпрессировать</button>
+        </form>
+    </div>
+</div>
+</div>
+
 <footer>
     <p>&copy; 2024 Все права защищены.</p>
 </footer>
