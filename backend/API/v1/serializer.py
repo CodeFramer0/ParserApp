@@ -1,6 +1,5 @@
-from rest_framework import serializers
-
 from nopriz.models import *
+from rest_framework import serializers
 
 
 class NoprizFizSerializer(serializers.ModelSerializer):
