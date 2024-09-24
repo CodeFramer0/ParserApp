@@ -33,11 +33,15 @@ class NoprizFiz(models.Model):
     class Meta:
         verbose_name = "Физ-лицо"
         verbose_name_plural = "Физ-лица"
+        unique_together = (
+            "id_number_img",
+            "full_name_img",
+        )
 
 
 class NoprizYr(models.Model):
     STATUS_CHOICES = [
-        ("ACTIVE", "Действует"),
+        ("ACTIVE", "Является членом"),
         ("EXCLUDED", "Исключен"),
     ]
 
