@@ -9,6 +9,7 @@ services:
     restart: always  
     command: >
       sh -c "
+        python manage.py makemigrations &&
         python manage.py makemigrations nopriz &&
         python manage.py makemigrations nostroy &&
         python manage.py migrate &&
@@ -18,7 +19,9 @@ services:
     volumes:
       - static:/backend/static
       - static:/updated_static
-      - media:/backend/media 
+      - media:/backend/media
+      - ./backend/nostroy/migrations:/backend/nostroy/migrations
+      - ./backend/nopriz/migrations:/backend/nopriz/migrations
     expose:
       - 8000
     env_file:
@@ -26,7 +29,6 @@ services:
     depends_on:
       - db
       - redis
-    
 
   db:
     container_name: parser_db
@@ -72,6 +74,8 @@ services:
     volumes:
       - static:/backend/static
       - media:/backend/media 
+      - ./backend/nostroy/migrations:/backend/nostroy/migrations
+      - ./backend/nopriz/migrations:/backend/nopriz/migrations
     env_file:
       - ./backend/.env
     depends_on:
@@ -89,6 +93,8 @@ services:
     volumes:
       - static:/backend/static
       - media:/backend/media 
+      - ./backend/nostroy/migrations:/backend/nostroy/migrations
+      - ./backend/nopriz/migrations:/backend/nopriz/migrations
     env_file:
       - ./backend/.env
     depends_on:
@@ -106,6 +112,7 @@ services:
       - static:/updated_static
     depends_on:
       - db
+
 volumes:
   postgres_data:
   static:
