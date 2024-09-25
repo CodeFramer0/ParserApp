@@ -9,12 +9,12 @@ import pandas as pd
 import pytesseract
 import requests
 from django.conf import settings
+from django.db.models import Case, CharField, Value, When
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from PIL import Image
 
 from .models import NoprizFiz, NoprizYr
-from django.db.models import Case, When, Value, CharField
 
 
 def generate_combinations_of_replacements(

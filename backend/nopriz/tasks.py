@@ -25,13 +25,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from .models import NoprizFiz, NoprizYr
-from .utils import (
-    NoprizFizExcelGenerator,
-    NoprizYrExcelGenerator,
-    extract_text_from_image,
-    fiz_get_type_of_work,
-    generate_combinations_of_replacements,
-)
+from .utils import (NoprizFizExcelGenerator, NoprizYrExcelGenerator,
+                    extract_text_from_image, fiz_get_type_of_work,
+                    generate_combinations_of_replacements)
 
 options = Options()
 options.add_argument("--no-sandbox")
