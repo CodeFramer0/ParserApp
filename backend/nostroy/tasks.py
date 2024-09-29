@@ -48,7 +48,7 @@ def smet_parse():
             obj, created = NostroySmet.objects.get_or_create(
                 id_number=columns[0].text.strip(),
                 defaults={
-                    "full_name": columns[1].text.split("Ф.И.О.")[1].strip(),
+                    "full_name": columns[1].text.split('Ф.И.О.')[1].strip(),
                     "date_of_inclusion_protocol": columns[2].text.strip(),
                     "date_of_exclusion": columns[3].text.strip(),
                     "type_of_work": columns[4].text.strip(),
