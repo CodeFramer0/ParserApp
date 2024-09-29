@@ -1,21 +1,13 @@
-import asyncio
-import bz2
+from io import BytesIO
 import logging
-import math
-import os
 import time
+from PIL import Image
 
+import pytesseract
 import requests
-from aiogram.types.input_file import InputFile
 from bs4 import BeautifulSoup
 from celery import shared_task
-from core.settings import bot
-from django.conf import settings
-from django.core.management import call_command
-from django.db.models import Q
-from django.db.models.functions import Length
 from django.db.utils import DataError
-from django.utils import timezone
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -24,7 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
-from .models import NostroySmet
+from .models import NostroySmet, NostroyFiz
 
 options = Options()
 options.add_argument("--no-sandbox")
@@ -33,21 +25,16 @@ options.add_argument("--headless")
 
 
 logger = logging.getLogger(__name__)
-BASE_URL = "https://nrs.nopriz.ru/"
+BASE_URL = "https://nrs.nostroy.ru/"
 STATUS_MAP = {
     "Действует": "ACTIVE",
     "Исключен": "EXCLUDED",
-    "Является членом": "ACTIVE",
 }
 
 
 @shared_task()
 def smet_parse():
     try:
-        r = requests.get(BASE_URL)
-        time.sleep(0.5)
-        soup = BeautifulSoup(r.content, "html.parser")
-
         r = requests.get(
             f"https://nostroy.ru/actual/reestr-spetsialistov-stoimostnogo-inzhiniringa/"
         )
@@ -82,3 +69,111 @@ def smet_parse():
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         raise
+
+
+def get_image_selenium(img_url):
+    r = requests.get(img_url, verify=False)
+    with Image.open(BytesIO(r.content)) as img:
+        text = pytesseract.image_to_string(img, config="--psm 6 --oem 3", lang="rus")
+        return text
+
+
+@shared_task()
+def fiz_parse():
+    total_objects = NostroyFiz.objects.count()
+    objects_per_page = 20 
+    last_parsed_page = total_objects // objects_per_page + 1
+
+
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.maximize_window()
+
+    for page in range(last_parsed_page, 20000):
+        driver.get(f"https://nrs.nostroy.ru/?sort=s.id&direction=ASC&page={page}")
+        time.sleep(2)
+        WebDriverWait(driver, 180).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "table"))
+        )
+        html = driver.page_source
+        soup = BeautifulSoup(html, "html.parser")
+        table = soup.find("table", {"class": "table"})
+        rows = table.find_all("tr")[1:]
+
+        for row in rows:
+            columns = row.find_all("td")
+            id_number_img = columns[0].find("img")
+            id_number_img = BASE_URL + id_number_img["src"][3:] if id_number_img else ""
+            if not id_number_img or len(id_number_img) < 10:
+                continue
+            full_name_img = columns[1].find("img")
+            date_of_inclusion_protocol_img = columns[2].find("img")
+            date_of_modification_img = columns[3].find("img")
+            date_of_issue_certificate_img = columns[4].find("img")
+
+            
+            full_name_img = BASE_URL + full_name_img["src"][3:] if full_name_img else ""
+            date_of_inclusion_protocol_img = (
+                BASE_URL + date_of_inclusion_protocol_img["src"][3:]
+                if date_of_inclusion_protocol_img
+                else ""
+            )
+            date_of_modification_img = (
+                BASE_URL + date_of_modification_img["src"][3:]
+                if date_of_modification_img
+                else ""
+            )
+            date_of_issue_certificate_img = (
+                BASE_URL + date_of_issue_certificate_img["src"][3:]
+                if date_of_issue_certificate_img
+                else ""
+            )
+
+            id_number = get_image_selenium(id_number_img) if id_number_img else ""
+            full_name = get_image_selenium(full_name_img) if full_name_img else ""
+            date_of_inclusion_protocol = (
+                get_image_selenium(date_of_inclusion_protocol_img)
+                if date_of_inclusion_protocol_img
+                else ""
+            )
+            date_of_modification = (
+                get_image_selenium(date_of_modification_img)
+                if date_of_modification_img
+                else ""
+            )
+            date_of_issue_certificate = (
+                get_image_selenium(date_of_issue_certificate_img)
+                if date_of_issue_certificate_img
+                else ""
+            )
+
+            logger.info(f"id_number: {id_number}, full_name: {full_name}")
+
+            type_of_work = columns[-2].text.strip()
+            status = columns[-1].text.split("\n")[-2].strip()
+            if len(status) > 4:
+                status = STATUS_MAP.get(status, status)
+            try:
+                obj, created = NostroyFiz.objects.get_or_create(
+                    id_number_img=id_number_img,
+                    defaults={
+                        "date_of_inclusion_protocol_img": date_of_inclusion_protocol_img,
+                        "date_of_modification_img": date_of_modification_img,
+                        "date_of_issue_certificate_img": date_of_issue_certificate_img,
+                        "full_name_img": full_name_img,
+                        "id_number": id_number,
+                        "full_name": full_name,
+                        "date_of_inclusion_protocol": date_of_inclusion_protocol,
+                        "date_of_modification": date_of_modification,
+                        "date_of_issue_certificate": date_of_issue_certificate,
+                        "type_of_work": type_of_work,
+                        "status_worker": status,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+
+            time.sleep(0.2)
+
+        # next_page_button = driver.find_elements(By.CLASS_NAME, "v-pagination__navigation")[-1]
+        # next_page_button.click()
