@@ -43,29 +43,21 @@ def smet_parse():
 
         for row in table.find("tbody").find_all("tr")[1:]:
             columns = row.find_all("td")
-            try:
-                obj, created = NostroySmet.objects.get_or_create(
-                    id_number=columns[0].text.strip(),
-                    defaults={
-                        "full_name": columns[1].text.strip(),
-                        "date_of_inclusion_protocol": columns[2].text.strip(),
-                        "date_of_exclusion": columns[3].text.strip(),
-                        "type_of_work": columns[4].text.strip(),
-                        "status_worker": STATUS_MAP[
-                            columns[5].text.strip().split("\n")[-1]
-                        ],
-                    },
-                )
-            except DataError as e:
-                logger.error(
-                    f"DataError occurred for id_number {columns[0].text.strip()}: {e}"
-                )
-                logger.error(f"Full name: {columns[1].text.strip()}")
-                logger.error(f"Date of inclusion protocol: {columns[2].text.strip()}")
-                logger.error(f"Date of exclusion: {columns[3].text.strip()}")
-                logger.error(f"Type of work: {columns[4].text.strip()}")
-                logger.error(f"Status worker: {columns[5].text.strip()[-1]}")
-                raise
+
+            logger.info(f"{columns[1].text.split('Ф.И.О.')[1].strip()}")
+            obj, created = NostroySmet.objects.get_or_create(
+                id_number=columns[0].text.strip(),
+                defaults={
+                    "full_name": columns[1].text.split("Ф.И.О.")[1].strip(),
+                    "date_of_inclusion_protocol": columns[2].text.strip(),
+                    "date_of_exclusion": columns[3].text.strip(),
+                    "type_of_work": columns[4].text.strip(),
+                    "status_worker": STATUS_MAP[
+                        columns[5].text.strip().split("\n")[-1]
+                    ],
+                },
+            )
+
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         raise
@@ -81,9 +73,8 @@ def get_image_selenium(img_url):
 @shared_task()
 def fiz_parse():
     total_objects = NostroyFiz.objects.count()
-    objects_per_page = 20 
+    objects_per_page = 20
     last_parsed_page = total_objects // objects_per_page + 1
-
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
@@ -111,7 +102,6 @@ def fiz_parse():
             date_of_modification_img = columns[3].find("img")
             date_of_issue_certificate_img = columns[4].find("img")
 
-            
             full_name_img = BASE_URL + full_name_img["src"][3:] if full_name_img else ""
             date_of_inclusion_protocol_img = (
                 BASE_URL + date_of_inclusion_protocol_img["src"][3:]
