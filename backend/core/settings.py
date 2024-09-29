@@ -189,8 +189,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "nopriz.tasks.dumpdata_and_send_to_telegram",
         "schedule": timedelta(hours=24),
     },
-    "НОСТРОЙ Сметчики парсинг основных данных": {
+    "НОСТРОЙ-Сметчики парсинг основных данных": {
         "task": "nostroy.tasks.smet_parse",
+        "schedule": timedelta(hours=48),
+    },
+    "НОСТРОЙ-Физ-лица парсинг основных данных": {
+        "task": "nostroy.tasks.fiz_parse",
         "schedule": timedelta(hours=48),
     },
 }

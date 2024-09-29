@@ -25,9 +25,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from .models import NoprizFiz, NoprizYr
-from .utils import (NoprizFizExcelGenerator, NoprizYrExcelGenerator,
-                    extract_text_from_image, fiz_get_type_of_work,
-                    generate_combinations_of_replacements)
+from .utils import (
+    NoprizFizExcelGenerator,
+    NoprizYrExcelGenerator,
+    extract_text_from_image,
+    fiz_get_type_of_work,
+    generate_combinations_of_replacements,
+)
 
 options = Options()
 options.add_argument("--no-sandbox")
@@ -101,8 +105,9 @@ def fiz_parse_main_data():
                 full_name_img = columns[1].find("img")["src"]
                 date_of_inclusion_protocol_img = columns[2].find("img")["src"]
 
-                full_name_img = BASE_URL + full_name_img[3:]
                 id_number_img = BASE_URL + id_number_img[3:]
+                full_name_img = BASE_URL + full_name_img[3:]
+
                 date_of_inclusion_protocol_img = (
                     BASE_URL + date_of_inclusion_protocol_img[3:]
                 )
@@ -123,9 +128,8 @@ def fiz_parse_main_data():
                         "status_worker": STATUS_MAP[columns[-1].text],
                     },
                 )
-                logger.info(f"Был создан новый объект {obj}")
             except Exception as e:
-                pass
+                logger.info(e)
 
 
 @shared_task

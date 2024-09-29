@@ -185,9 +185,9 @@ class NoprizYrExcelGenerator(ExcelGenerator):
         data = (
             NoprizYr.objects.all()
             .annotate(
-                status_worker_display=Case(
-                    When(status_worker="ACTIVE", then=Value("Является членом")),
-                    When(status_worker="EXCLUDED", then=Value("Исключен")),
+                status_display=Case(
+                    When(status="ACTIVE", then=Value("Является членом")),
+                    When(status="EXCLUDED", then=Value("Исключен")),
                     default=Value("Неизвестно"),
                     output_field=CharField(),
                 )
@@ -195,7 +195,7 @@ class NoprizYrExcelGenerator(ExcelGenerator):
             .values(
                 "id_number",
                 "name_cpo",
-                "status",
+                "status_display",
                 "name_of_the_member_cpo",
                 "inn",
                 "ogrn",
@@ -209,7 +209,7 @@ class NoprizYrExcelGenerator(ExcelGenerator):
         column_mapping = {
             "id_number": "Номер ID",
             "name_cpo": "Название СРО",
-            "status_worker_display": "Статус",
+            "status_display": "Статус",
             "name_of_the_member_cpo": "Название члена СРО",
             "inn": "ИНН",
             "ogrn": "ОГРН",
